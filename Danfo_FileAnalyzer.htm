@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+     
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <link rel="stylesheet" href="frame.css">
+ <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"> -->
+<script src="plotly-1.2.0.min.js"></script> 
+     <script src="https://cdn.jsdelivr.net/npm/danfojs@0.3.3/lib/bundle.min.js"></script>
+
+    <title>File Analyzer</title>
+	<style>
+	.block_container
+{
+    /*position:fixed;
+    top:20px;
+    height:100px;
+    bottom: 1px;*/
+}
+.bloc1
+{
+	
+    display:inline;
+
+}
+	.my_text
+            {
+            	position: absolute;
+  				right: 10px;
+  				top:20px;
+  				/*bottom: 15px;*/
+            	font-family:  Arial, Helvetica, sans-serif;
+                font-size:    30px;
+                font-weight:  bold;
+				/*margin-top: 1;*/
+				/*margin-bottom: 1;*/
+            }
+	</style>		
+</head>
+
+<body >
+<div class='block_container'>
+	<div class="button-33 bloc1">
+	  <input class="file" type="file" id="file" >
+	   <label for="file">
+	    Select file
+	    <p class="file-name"></p>
+	  </label>
+	  </div>
+
+	  
+	<div id='filename' class='my_text' align='right' ></div>
+</div>
+<div style="position:relative;margin-top:20px;margin-bottom:20px" align="center" >
+<input class="button-33" type="button" id="Summary" value="Summary" >
+<input class="button-33" type="button" id="Detailed" value="Detailed" >
+<input class="button-33" type="button" id="Visualize" value="Visualize" >
+</div>
+
+<div  align="right"><div  id="container"></div></div>
+
+
+ <!-- <div align="center">  -->
+<div class="wrapper" id="wrapper" >
+	<div class="fancy-button bg-gradient1"><span><i class="fa fa-wheelchair-alt"></i>Non Nulls:&nbsp<div id="count"></div></span></div>
+	<div class="fancy-button bg-gradient2"><span><i class="fa fa-wheelchair-alt"></i>Max Value:&nbsp<div id="max"></div></span></div>
+	<div class="fancy-button bg-gradient1"><span><i class="fa fa-wheelchair-alt"></i>Min Value:&nbsp<div id="min"></div></span></div>
+	<div class="fancy-button bg-gradient2"><span><i class="fa fa-wheelchair-alt"></i>Unique:&nbsp<div id="va"></div></span></div>
+	<div class="fancy-button bg-gradient1"><span><i class="fa fa-wheelchair-alt"></i>Data Type:&nbsp<div id="ctype"></div></span></div>
+	<div class="fancy-button bg-gradient2"><span><i class="fa fa-wheelchair-alt"></i>Mean Value:&nbsp<div id="mean"></div></span></div>	
+	<div class="fancy-button bg-gradient1"><span><i class="fa fa-wheelchair-alt"></i>Standard Deviation:&nbsp<div id="std"></div></span></div>
+	<div class="fancy-button bg-gradient2"><span><i class="fa fa-wheelchair-alt"></i>Variance:&nbsp<div id="Var"></div></span></div>
+	<div class="fancy-button bg-gradient1"><span><i class="fa fa-wheelchair-alt"></i>Extras:&nbsp<div id="Var">NULL</div></span>
+	</div>
+</div>
+<!-- </div> -->
+
+<div id='forfadeeffect'><div class="tbl-header"><div  id="contain"></div></div></div>
+<div class="tbl-content"><div  id="contain1"></div></div>
+<!-- <br> -->
+<div class='visual' id='visual'>
+<div class='rowcount' id='rowcount'></div>
+<div class='uniquevalues' id='uniquevalues'></div>
+<div class='meanvalues' id='meanvalues'></div>
+<div class='plot' id='plot'></div>
+</div>
+<script>
+var button=document.getElementById("Detailed")
+button.style.display='none';
+var button2=document.getElementById("Summary")
+button2.style.display='none';
+var button3=document.getElementById("Visualize")
+button3.style.display='none';
+var element=document.getElementById("wrapper")
+element.style.display = 'none';
+var tableview=document.getElementById("contain")
+tableview.style.display='inline';
+var tableview1=document.getElementById("contain1")
+tableview1.style.display='inline';
+var c=document.getElementsByClassName("tbl-content")[0];
+c.style.display='inline-block';
+var visual=document.getElementById("visual")
+visual.style.display='none';
+var dropdown=document.getElementById("container")
+var colnames=new Array()
+var colvalues=new Array()
+var meanvalues=new Array()
+var rowcount=new Array()
+i=0;j=0
+document.getElementById("file").addEventListener("change", async () => 
+{
+		if(document.contains(document.getElementById("table")))
+							{document.getElementById('table').remove()}
+		if(document.contains(document.getElementById("table")))
+							{document.getElementById('table').remove()} 
+		if(document.contains(document.getElementById("chosen")))
+							{ document.getElementById("chosen").remove();
+							 document.getElementById("label").remove();
+							 }					 
+		const csvFile = document.getElementById("file").files[0]
+		button.style.display='inline';
+		button2.style.display='inline';
+		button3.style.display='inline';
+		var fileExt = csvFile.name.split('.').pop();
+		var filename=csvFile.name
+		document.getElementById('filename').innerHTML=filename
+		visual.style.display='none';
+		element.style.display = 'none';
+		dropdown.style.display='none';
+		tableview.style.display='inline';
+		tableview1.style.display='inline';
+		c.style.display='block';			
+		if(fileExt=="xlsx")
+		{	dfd.read_excel(csvFile).then((df) => {	
+		dataprocess(df)		
+		})
+		}
+		else{
+		dfd.read_csv(csvFile).then((df) => 
+		{
+			dataprocess(df)					
+		})}
+}
+)
+
+function dataprocess(df)
+{
+			//if(t.value=="Detailed")
+			//{
+				document.getElementById("Detailed").onclick=function(){
+					//console.log(datatypes)//[0].value)//[1].value)
+					//document.getElementById("file").onchange=function(){
+				 
+					//}
+					c.style.display='none';
+					visual.style.display='none';
+					tableview.style.display='none';
+					tableview1.style.display='none';
+					element.style.display = 'inline';
+					dropdown.style.display='inline';  
+					// if(document.contains(document.getElementById("contain")))
+					// {document.getElementById("contain").remove()} 
+					   
+					if(document.contains(document.getElementById("chosen"))){}
+					else{
+					
+				   var select = document.createElement("select");
+					select.name = "chosen";
+					//select.onchange="onSelect()";
+					//select.classList.add("us-form-select-wrap")
+					select.id = "chosen";
+				 for (const val of df.axis.columns)
+					{colnames[i]=val;i++
+						var option = document.createElement("option");
+						option.value = val;
+						option.text = val.charAt(0).toUpperCase() + val.slice(1);
+						select.appendChild(option);
+						//console.log(select)
+					}  
+					 var label = document.createElement("label");
+					label.innerHTML = "Choose the column: "
+					label.htmlFor = "column";
+					label.id='label';
+					document.getElementById("container").appendChild(label).appendChild(select);
+					}
+					var test=select.options[select.selectedIndex].value
+					document.getElementById("count").innerHTML=df[test].count()
+					document.getElementById("ctype").innerHTML=df[test].dtypes
+					document.getElementById("va").innerHTML=df[test].nunique(axis=1)
+								
+					try{
+					document.getElementById("max").innerHTML=df[test].max()
+					document.getElementById("mean").innerHTML=df[test].mean()
+					document.getElementById("min").innerHTML=df[test].min()
+					document.getElementById("Var").innerHTML=df[test].var()
+					document.getElementById("std").innerHTML=df[test].std()
+					}
+					catch(err){
+					document.getElementById("max").innerHTML="Null"//df[ab].astype({column:ab,dtype:"int32"} 
+					document.getElementById("min").innerHTML="Null"
+					document.getElementById("mean").innerHTML="Null"
+					document.getElementById("Var").innerHTML="Null"
+					document.getElementById("std").innerHTML="Null"
+					}
+				//alert(test)
+				//df1.print()
+				//console.log(df.axis.columns[0])
+				const ab=test
+				
+									
+				
+				document.getElementById("chosen").onchange=function()
+				{var ab=select.options[select.selectedIndex].value;
+
+				//var datatypes=df.ctypes.values
+				//console.log(dt)
+				//df.isna().sum().print();
+				
+				document.getElementById("count").innerHTML=df[ab].count()
+				document.getElementById("ctype").innerHTML=df[ab].dtypes
+				document.getElementById("va").innerHTML=df[ab].nunique(axis=1)
+				try{
+				
+				document.getElementById("max").innerHTML=df[ab].max()
+				document.getElementById("mean").innerHTML=df[ab].mean()
+				document.getElementById("min").innerHTML=df[ab].min()
+				document.getElementById("Var").innerHTML=df[ab].var()
+				document.getElementById("std").innerHTML=df[ab].std()
+				 }
+				 catch(err){
+				 document.getElementById("max").innerHTML="Null"//df[ab].astype({column:ab,dtype:"int32"} 
+				 document.getElementById("min").innerHTML="Null"
+				 document.getElementById("mean").innerHTML="Null"
+				 document.getElementById("Var").innerHTML="Null"
+				 document.getElementById("std").innerHTML="Null"
+				 }
+				df1=df[ab].isna()
+				df1.print()
+				
+				//let query_df = df.query({ column: "bmi", is: "==", to: "undefined" })
+				//query_df.print()
+//////////////////////////////////
+
+///////////////////////////////////	
+
+				}
+					  
+			}
+			////////////////////////Visualize/////////////////////////
+			document.getElementById("Visualize").onclick=function()
+			{	
+				c.style.display='none';
+				element.style.display = 'none';
+				dropdown.style.display='none';     
+				tableview.style.display='none';
+				tableview1.style.display='none';
+				visual.style.display='inline';
+				for(val of df.axis.columns)
+				{	try{
+					colvalues[j]=df[val].nunique(axis=1);}
+					catch(err1){colvalues[j]="Null";}
+					try{
+					rowcount[j]=df[val].count();}
+					catch(err2){rowcount[j]="Null";}
+					try{meanvalues[j]=df[val].mean();}
+					catch(err3){meanvalues[j]=0}
+					j++
+				}	
+				nn_chart = {
+						  'data': [{
+				  				  paper_bgcolor:'rgba(130,50,0,0.3)',
+								  plot_bgcolor:'rgba(130,50,0,0.3)',
+								  mode: 'lines+markers',
+								  y: rowcount,
+								  x: df.axis.columns,
+								  type:'scatter',
+								  opacity: 1,
+								  line: {
+									width: 4,
+									color: 'hasel blue',
+									reversescale: false
+								  }
+								 
+										}],				
+
+						  'layout': {
+						    paper_bgcolor: "rgba(0,0,0,0)",
+						    plot_bgcolor:'rgba(0,0,0,0)',
+						    
+						    xaxis: {
+											title: 'Columns',
+											showgrid: false,
+											zeroline: false
+										  },
+										  yaxis: {
+											title: 'Unique',
+											showline: false
+										  }, 
+										  height: 500,
+						  }
+
+}
+				
+				uniquevalues={
+					'data':[{
+				  
+				  mode: 'lines+markers',
+				  y: colvalues,
+				  x: df.axis.columns,
+				  type:'scatter',
+				  opacity: 1,
+				  line: {
+					width: 4,
+					color: 'green',
+					reversescale: false
+				  }
+				 
+				}],
+				'layout':{ paper_bgcolor:'rgba(0,0,0,0)',
+				  plot_bgcolor:'rgba(0,0,0,0)',
+				  xaxis: {
+					title: 'Columns',
+					showgrid: false,
+					zeroline: false
+				  },
+				  yaxis: {
+					title: 'Unique',
+					showline: false
+				  }, 
+				  height: 500,
+				  
+				}}
+				
+				mv_chart={
+					data:[{
+				 
+				  mode: 'lines+markers',
+				  y: meanvalues,
+				  x: df.axis.columns,
+				  type:'scatter',
+				  opacity: 1,
+				  line: {
+					width: 4,
+					color: '#951010',
+					reversescale: false
+				  }
+				 
+				}],'layout':{ 
+					 paper_bgcolor:'rgba(0,0,0,0)',
+				  	 plot_bgcolor:'rgba(0,0,0,0)',
+				  	 xaxis: {
+					title: 'Columns',
+					showgrid: false,
+					zeroline: false
+				  },
+				  yaxis: {
+					title: 'Mean',
+					showline: false
+				  }, 
+				  height: 500,
+				  
+				}
+			}
+			Plotly.newPlot('rowcount',nn_chart.data,nn_chart.layout);
+			Plotly.newPlot('uniquevalues',uniquevalues.data,uniquevalues.layout );
+			Plotly.newPlot('meanvalues',mv_chart.data,mv_chart.layout );
+
+			}
+	///////////////////////END/////////////////////////////////
+	/////////Summary Table////////////////////////////////////
+		//else if(t.value=="Summary")
+		//{
+		 document.getElementById("Summary").onclick=function()
+		 {
+		 //document.getElementById("file").onchange=function(){
+		 c.style.display='inline-block';
+		 visual.style.display='none';
+		 element.style.display = 'none';
+		 dropdown.style.display='none';     
+		 tableview.style.display='inline';
+		 tableview1.style.display='inline';}
+			var table = document.createElement('table'),thead, tr, td, row, cell;
+			table.id='table';
+			// table.classList.add('table-header')
+			//table.setAttribute('class',"table")//css works even without this
+			section=document.createElement('section');
+			thead = document.createElement('thead');
+			
+			
+			tr = document.createElement('tr');
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Column Name"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Non Nulls"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Max Value"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Min Value"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Mean Value"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Unique Values"
+			
+			th = document.createElement('th');
+			tr.appendChild(th);
+			th.innerHTML="Data Type"
+			
+			// tr.classList.add("tbl-header")
+			thead.appendChild(tr)
+			table.appendChild(thead)
+			section.appendChild(table)
+
+			var table1 = document.createElement('table'), tbody,tr, td, row, cell;
+				tbody = document.createElement('tbody');
+				table1.id='table';
+
+			for (const val of df.axis.columns) 
+			{
+				tr = document.createElement('tr');
+					td = document.createElement('td');
+				    td.innerHTML = val.toUpperCase();			
+					tr.appendChild(td);		
+				   	
+									
+				    try{ 
+					   	td = document.createElement('td');
+					    td.innerHTML = df[val].count();			
+						tr.appendChild(td);	
+						}
+					catch(err0)
+						{	
+						td = document.createElement('td');
+					    td.innerHTML = "Null";			
+						tr.appendChild(td);	
+						}
+					try{
+				    td = document.createElement('td');
+				    td.innerHTML = df[val].max();			
+					tr.appendChild(td);
+					}
+					catch(err1){
+					td = document.createElement('td');
+					td.innerHTML = "Null";
+					tr.appendChild(td);
+					}
+					try{
+					td = document.createElement('td');
+					td.innerHTML = df[val].min();
+					tr.appendChild(td);
+					}
+					catch(err2){
+					td = document.createElement('td');
+					td.innerHTML = "Null";
+					tr.appendChild(td);
+					}
+					try{
+					td = document.createElement('td');
+					td.innerHTML = df[val].mean();
+					tr.appendChild(td);
+					}
+					catch(err3){
+					td = document.createElement('td');
+					td.innerHTML = "Null";
+					tr.appendChild(td);
+					}
+					try{
+					td = document.createElement('td');
+					td.innerHTML=df[val].nunique(axis=1)
+					tr.appendChild(td);
+					}
+					catch(err4){
+					td = document.createElement('td');
+					td.innerHTML = "Null"
+					tr.appendChild(td);
+					}
+					try{
+					td = document.createElement('td');
+					td.innerHTML=df[val].dtypes
+					tr.appendChild(td);
+					}
+					catch(err5){
+					td = document.createElement('td');
+					td.innerHTML = "Null"
+					tr.appendChild(td);
+					}
+					
+					
+					
+					
+					
+					
+				// table1.classList.add("tbl-content")
+				tbody.appendChild(tr);
+				table1.appendChild(tbody);
+				section.appendChild(table1);
+			}
+			document.getElementById('contain').appendChild(table);
+			document.getElementById('contain1').appendChild(table1);
+			// document.getElementById('contain').appendChild(table1);
+				
+			////////////////////////////////
+
+		//}
+
+	
+
+}
+		 
+		 
+
+  </script> 
+  
+</body>
+
+</html>
